@@ -2,6 +2,7 @@
 
 from numpy import *
 import operator
+import os
 
 def create_data_set():
     group = array([[1.0, 1.1], [1.0, 1.0], [0, 0], [0, 0.1]])
@@ -73,3 +74,55 @@ def dating_class_test():
         if (classifier_result != dating_labels[i]):
             error_count += 1.0
     print "the total error rate is: %f" %(error_count/float(num_test_vecs))
+
+def classify_person():
+    result_list = ['not at all', 'in small doses', 'in large doses']
+    percent_tats = float(raw_input("percentage of time playing video games?"))
+    ff_miles = float(raw_input("frequent filer miles earned per year?"))
+    ice_cream = float(raw_input("liters of icecream consumed per year?"))
+    dating_data_mat, dating_labels = file2matrix("./data/datingTestSet2.txt")
+    norm_mat, ranges, min_vals = auto_norm(dating_data_mat)
+    in_arr = array([ff_miles, percent_tats, ice_cream])
+    classifier_result = classify0((in_arr - min_vals)/ranges, norm_mat, dating_labels, 3)
+    print "You will probally like this person:", result_list[classifier_result - 1]
+
+
+def img2vector(filename):
+    return_vec = zeros((1, 1024))
+    f = open(filename)
+    for i in range(32):
+        line_str = f.readline()
+        for j in range(32):
+            return_vec[0, 32*i + j] = int(line_str[j])
+    return return_vec
+
+def handwriting_class_test():
+    # 1. load training data
+    hw_labels = []
+    training_file_list = os.listdir('./digits/trainingDigits')
+    m = len(training_file_list)
+    training_mat = zeros((m, 1024))
+    for i in range(m):
+        file_name_full = training_file_list[i]
+        file_name_prefix = file_name_full.split(".")[0]
+        class_num = int(file_name_prefix.split("_")[0])
+        hw_labels.append(class_num)
+        training_mat[i:] = img2vector('./digits/trainingDigits/%s'%file_name_full)
+
+    # 2. check test data
+    test_file_list = os.listdir('./digits/testDigits')
+
+    error_count = 0.0
+    m_test = len(test_file_list)
+    for i in range(m_test):
+        test_file_name_full = test_file_list[i]
+        test_file_name_prefix = test_file_name_full.split(".")[0]
+        test_file_num = int(test_file_name_prefix.split("_")[0])
+        test_num_vec = img2vector('./digits/testDigits/%s'%test_file_name_full)
+        classifier_result = classify0(test_num_vec, training_mat, hw_labels, 3)
+        if classifier_result != test_file_num:
+            print "%s, the classifier came back with: %d, the real answer is: %d"%(test_file_name_full, classifier_result, test_file_num)
+            error_count += 1.0
+    print "\nthe total number of errors is: %d" %error_count
+    print "\nthe total error rate is: %f" %(error_count/float(m_test))
+
